@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const cors = require("cors");
 const PORT = process.env.PORT ||8080;
 
 
@@ -29,6 +30,8 @@ const arr = [
         keyword:"Hair wax"
     }
 ]
+
+app.use(cors());
 
 app.get("/data",(req,res)=>{
    

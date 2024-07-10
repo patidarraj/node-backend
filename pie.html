@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pie Chart with Percentages Outside</title>
+</head>
+
+<body>
+    <canvas id="myCanvas" width="600" height="600"></canvas>
+    <script>
+        let arr = [
+            {
+                category: "Hair",
+                brand: 25,
+                competition: 20,
+                total: 45
+            },
+            {
+                category: "Hair shampoo",
+                brand: 15,
+                competition: 25,
+                total: 40
+            },
+            {
+                category: "Hair conditioner",
+                brand: 33,
+                competition: 12,
+                total: 45
+            }
+        ];
+
+        let total = 0;
+        for (let obj of arr) {
+            total += obj.total;
+        }
+
+        let startAngle = 0;
+        let result = [];
+        let color = ['#FF0000', '#FF1493', '#800080'];
+        let cumulativePercentage = 0; // To keep track of cumulative percentage
+        let i = 0;
+        for (let obj of arr) {
+            let parentEndAngle = startAngle + (obj.total / total) * 2 * Math.PI;
+
+            let childEndAngle = startAngle + ((obj.brand / obj.total) * (parentEndAngle - startAngle));
+
+            result.push({ startAngle: startAngle, endAngle: childEndAngle, color: color[i], useColor: true });
+            result.push({ startAngle: childEndAngle, endAngle: parentEndAngle, stripeColor: color[i], useColor: false });
+
+            const segmentPercentage = (Math.abs(childEndAngle - startAngle) / (2 * Math.PI)) * 100;
+            cumulativePercentage += segmentPercentage;
+
+            // Store cumulative percentage for each segment
+            result[result.length - 2].percentage = segmentPercentage;
+            result[result.length - 1].percentage = cumulativePercentage;
+
+            startAngle = parentEndAngle;
+            i++;
+        }
+
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 200;
+        const segments = result;
+
+        function createStripesPatternForSegment(color) {
+            const stripesCanvas = document.createElement('canvas');
+            const stripesCtx = stripesCanvas.getContext('2d');
+            const patternWidth = 4;
+            const patternHeight = 2;
+            stripesCanvas.width = patternWidth;
+            stripesCanvas.height = patternHeight;
+            stripesCtx.fillStyle = '#FFF'; // White color for background
+            stripesCtx.fillRect(0, 0, patternWidth, patternHeight);
+            stripesCtx.strokeStyle = color; // Set color for stripes
+            stripesCtx.lineWidth = 1;
+            stripesCtx.setLineDash([2, 2]); // Dash pattern: 2px solid, 2px space
+            stripesCtx.moveTo(0, patternHeight / 2);
+            stripesCtx.lineTo(patternWidth, patternHeight / 2);
+            stripesCtx.stroke();
+            return ctx.createPattern(stripesCanvas, 'repeat');
+        }
+
+        function drawSegment(startAngle, endAngle, color, useColor, stripeColor) {
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.closePath();
+            if (useColor) {
+                ctx.fillStyle = color;
+                ctx.fill();
+            } else {
+                ctx.fillStyle = createStripesPatternForSegment(stripeColor);
+                ctx.fill();
+            }
+        }
+
+        function drawTextOutsideSegment(angle, text) {
+            const textRadius = radius + 30; // Distance from the center to the text
+            const textAngle = angle - Math.PI / 2; // Adjust angle to start from the top
+
+            const x = centerX + Math.cos(textAngle) * textRadius;
+            const y = centerY + Math.sin(textAngle) * textRadius;
+
+            ctx.fillStyle = '#000';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+
+            ctx.fillText(text, x, y);
+        }
+
+        segments.forEach((segment, index) => {
+            drawSegment(segment.startAngle, segment.endAngle, segment.color, segment.useColor, segment.stripeColor);
+            const label = arr[Math.floor(index / 2)].category; // Get category label for the segment
+            const percentage = segment.percentage.toFixed(2); // Get stored percentage for the segment
+            const midAngle = (segment.startAngle + segment.endAngle) / 2;
+
+            drawTextOutsideSegment(midAngle, `${label}: ${percentage}%`);
+        });
+
+        // Draw border line around the outer side of the circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    </script>
+</body>
+
+</html>
